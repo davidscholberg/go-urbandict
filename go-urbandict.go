@@ -49,33 +49,22 @@ func (d *Definition) String() string {
     return string(str)
 }
 
-// Err is the error type for this library.
-type Err struct {
-    msg string
-}
-
-func (e *Err) Error() string {
-    return fmt.Sprintf("go-urbandict: error: %s\n", e.msg)
-}
-
 // Define gets the top definition for a search term.
-func Define(term string) (*Definition, *Err) {
+func Define(term string) (*Definition, error) {
     defs, err := DefineRaw(term)
     if err != nil {
         return nil, err
     }
 
     if len(defs.List) == 0 {
-        return nil, &Err{
-            fmt.Sprintf("no definitions for '%s' returned", term),
-        }
+        return nil, fmt.Errorf("no definitions for '%s' returned", term)
     }
 
     return &defs.List[0], nil
 }
 
 // DefineRaw gets the full response object for a search query.
-func DefineRaw(term string) (*DefinitionResponse, *Err) {
+func DefineRaw(term string) (*DefinitionResponse, error) {
     q := url.Values{}
     q.Add("term", term)
     apiUrl := fmt.Sprintf(apiUrlFmtDefine, q.Encode())
@@ -84,41 +73,41 @@ func DefineRaw(term string) (*DefinitionResponse, *Err) {
 }
 
 // Random gets a random definition.
-func Random() (*Definition, *Err) {
+func Random() (*Definition, error) {
     randDefs, err := RandomRaw()
     if err != nil {
         return nil, err
     }
 
     if len(randDefs.List) == 0 {
-        return nil, &Err{"no random definitions returned"}
+        return nil, fmt.Errorf("no random definitions returned")
     }
 
     return &randDefs.List[0], nil
 }
 
 // RandomRaw gets a full response object for a random definition api call.
-func RandomRaw() (*DefinitionResponse, *Err) {
+func RandomRaw() (*DefinitionResponse, error) {
     return get(apiUrlRand)
 }
 
 // get performs the urban dictionary api call and json parsing.
-func get(apiUrl string) (*DefinitionResponse, *Err) {
+func get(apiUrl string) (*DefinitionResponse, error) {
     response, err := http.Get(apiUrl)
     if err != nil {
-        return nil, &Err{err.Error()}
+        return nil, err
     }
     defer response.Body.Close()
 
     body, err := ioutil.ReadAll(response.Body)
     if err != nil {
-        return nil, &Err{err.Error()}
+        return nil, err
     }
 
     defs := DefinitionResponse{}
     err = json.Unmarshal(body, &defs)
     if err != nil {
-        return nil, &Err{err.Error()}
+        return nil, err
     }
 
     return &defs, nil
