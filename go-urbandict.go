@@ -1,3 +1,4 @@
+// Package urbandict provides a Go wrapper for the Urban Dictionary REST API.
 package urbandict
 
 import (
@@ -11,7 +12,7 @@ import (
 const apiUrlFmtDefine = "http://api.urbandictionary.com/v0/define?%s"
 const apiUrlRand = "http://api.urbandictionary.com/v0/random"
 
-// represents the JSON response from urban dictionary
+// DefinitionResponse represents the JSON response from urban dictionary.
 type DefinitionResponse struct {
     List []Definition   `json:"list"`
     Result_type string  `json:"result_type"`
@@ -27,7 +28,7 @@ func (d *DefinitionResponse) String() string {
     return string(str)
 }
 
-// represents a single urban dictionary definition
+// Definition represents a single urban dictionary definition.
 type Definition struct {
     Author string       `json:"author"`
     Current_vote string `json:"current_vote"`
@@ -48,7 +49,7 @@ func (d *Definition) String() string {
     return string(str)
 }
 
-// error type for this library
+// Err is the error type for this library.
 type Err struct {
     msg string
 }
@@ -57,7 +58,7 @@ func (e *Err) Error() string {
     return fmt.Sprintf("go-urbandict: error: %s\n", e.msg)
 }
 
-// get top definition for a search term
+// Define gets the top definition for a search term.
 func Define(term string) (*Definition, *Err) {
     defs, err := DefineRaw(term)
     if err != nil {
@@ -73,7 +74,7 @@ func Define(term string) (*Definition, *Err) {
     return &defs.List[0], nil
 }
 
-// get full response object for a search query
+// DefineRaw gets the full response object for a search query.
 func DefineRaw(term string) (*DefinitionResponse, *Err) {
     q := url.Values{}
     q.Add("term", term)
@@ -82,7 +83,7 @@ func DefineRaw(term string) (*DefinitionResponse, *Err) {
     return get(apiUrl)
 }
 
-// get a random definition
+// Random gets a random definition.
 func Random() (*Definition, *Err) {
     randDefs, err := RandomRaw()
     if err != nil {
@@ -96,12 +97,12 @@ func Random() (*Definition, *Err) {
     return &randDefs.List[0], nil
 }
 
-// get full response object for a random definition api call
+// RandomRaw gets a full response object for a random definition api call.
 func RandomRaw() (*DefinitionResponse, *Err) {
     return get(apiUrlRand)
 }
 
-// perform urban dictionary api call and json parsing
+// get performs the urban dictionary api call and json parsing.
 func get(apiUrl string) (*DefinitionResponse, *Err) {
     response, err := http.Get(apiUrl)
     if err != nil {
