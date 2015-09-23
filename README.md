@@ -10,7 +10,7 @@ Fetch and build go-urbandict:
 go get github.com/davidscholberg/go-urbandict
 ```
 
-### API Overview
+### Library overview
 
 ```
 func Define(term string) (*Definition, *Err)
