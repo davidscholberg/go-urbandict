@@ -13,10 +13,10 @@ go get github.com/davidscholberg/go-urbandict
 ### Library overview
 
 ```
-func Define(term string) (*Definition, *Err)
-func Random() (*Definition, *Err)
-func DefineRaw(term string) (*DefinitionResponse, *Err)
-func RandomRaw() (*DefinitionResponse, *Err)
+func Define(term string) (*Definition, error)
+func Random() (*Definition, error)
+func DefineRaw(term string) (*DefinitionResponse, error)
+func RandomRaw() (*DefinitionResponse, error)
 type Definition struct { ... }
 type DefinitionResponse struct { ... }
 ```
