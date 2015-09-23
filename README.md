@@ -19,7 +19,6 @@ func DefineRaw(term string) (*DefinitionResponse, *Err)
 func RandomRaw() (*DefinitionResponse, *Err)
 type Definition struct { ... }
 type DefinitionResponse struct { ... }
-type Err struct { ... }
 ```
 
 ### Usage
