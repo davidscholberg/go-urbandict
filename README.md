@@ -15,11 +15,14 @@ go get github.com/davidscholberg/go-urbandict
 ```
 func Define(term string) (*Definition, error)
 func Random() (*Definition, error)
+func WordOfTheDay() (*Definition, error)
 func DefineRaw(term string) (*DefinitionResponse, error)
 func RandomRaw() (*DefinitionResponse, error)
 type Definition struct { ... }
 type DefinitionResponse struct { ... }
 ```
+
+**NOTE**: The WordOfTheDay function scrapes Urban Dictionary's front page for the word of the day since this feature does not appear to be exposed in their REST API.
 
 ### Usage
 
@@ -43,6 +46,14 @@ func main () {
     fmt.Printf("Accessing individual elements:\ndef: %s\nexample: %s\n\n",
         def.Definition,
         def.Example)
+
+    // get the word of the day
+    def, err = urbandict.WordOfTheDay()
+    if err != nil {
+        fmt.Fprintln(os.Stderr, err)
+        return
+    }
+    fmt.Printf("JSON representation of the word of the day:\n%s\n\n", def)
 
     // get a random definition
     def, err = urbandict.Random()

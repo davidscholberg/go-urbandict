@@ -4,13 +4,16 @@ package urbandict
 import (
     "encoding/json"
     "fmt"
+    "golang.org/x/net/html"
     "io/ioutil"
     "net/http"
     "net/url"
+    "strings"
 )
 
 const apiUrlFmtDefine = "http://api.urbandictionary.com/v0/define?%s"
 const apiUrlRand = "http://api.urbandictionary.com/v0/random"
+const homepageUrl = "http://www.urbandictionary.com"
 
 // DefinitionResponse represents the JSON response from urban dictionary.
 type DefinitionResponse struct {
@@ -91,6 +94,30 @@ func RandomRaw() (*DefinitionResponse, error) {
     return get(apiUrlRand)
 }
 
+// WordOfTheDay returns the definition for Urban Dictionary's word of the day.
+func WordOfTheDay() (*Definition, error) {
+    response, err := http.Get(homepageUrl)
+    if err != nil {
+        return nil, err
+    }
+    defer response.Body.Close()
+
+    doctree, err := html.Parse(response.Body)
+    if err != nil {
+        return nil, err
+    }
+
+    wotd, err := searchForWotd(doctree)
+    if err != nil {
+        return nil, err
+    }
+    if len(wotd) == 0 {
+        return nil, fmt.Errorf("word of the day not found")
+    }
+
+    return Define(wotd)
+}
+
 // get performs the urban dictionary api call and json parsing.
 func get(apiUrl string) (*DefinitionResponse, error) {
     response, err := http.Get(apiUrl)
@@ -111,4 +138,27 @@ func get(apiUrl string) (*DefinitionResponse, error) {
     }
 
     return &defs, nil
+}
+
+// searchForWotd searches the parsed html document for the word of the day.
+func searchForWotd(n *html.Node) (string, error) {
+    if n.Type == html.ElementNode && n.Data == "title" {
+        if n.FirstChild.Type != html.TextNode {
+            err := fmt.Errorf("child of title not TextNode type")
+            return "", err
+        }
+        parsedTitle := strings.Split(n.FirstChild.Data, ": ")
+        if len(parsedTitle) != 2 || len(parsedTitle[1]) == 0 {
+            err := fmt.Errorf("title text could not be parsed")
+            return "", err
+        }
+        return parsedTitle[1], nil
+    }
+    for c := n.FirstChild; c != nil; c = c.NextSibling {
+        wotd, err := searchForWotd(c)
+        if len(wotd) > 0 || err != nil {
+            return wotd, err
+        }
+    }
+    return "", nil
 }
