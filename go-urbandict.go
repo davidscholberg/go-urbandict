@@ -13,7 +13,8 @@ import (
 
 const apiUrlFmtDefine = "http://api.urbandictionary.com/v0/define?%s"
 const apiUrlRand = "http://api.urbandictionary.com/v0/random"
-const homepageUrl = "http://www.urbandictionary.com"
+const wwwUrlHome = "http://www.urbandictionary.com"
+const wwwUrlRand = "http://www.urbandictionary.com/random.php"
 
 // DefinitionResponse represents the JSON response from urban dictionary.
 type DefinitionResponse struct {
@@ -94,9 +95,33 @@ func RandomRaw() (*DefinitionResponse, error) {
     return get(apiUrlRand)
 }
 
+// Trending returns Urban Dictionary's currently trending words.
+func Trending() ([]string, error) {
+    response, err := http.Get(wwwUrlRand)
+    if err != nil {
+        return nil, err
+    }
+    defer response.Body.Close()
+
+    doctree, err := html.Parse(response.Body)
+    if err != nil {
+        return nil, err
+    }
+
+    trending, err := searchForTrending(doctree)
+    if err != nil {
+        return nil, err
+    }
+    if len(trending) == 0 {
+        return nil, fmt.Errorf("no trending words found")
+    }
+
+    return trending, nil
+}
+
 // WordOfTheDay returns the definition for Urban Dictionary's word of the day.
 func WordOfTheDay() (*Definition, error) {
-    response, err := http.Get(homepageUrl)
+    response, err := http.Get(wwwUrlHome)
     if err != nil {
         return nil, err
     }
@@ -116,6 +141,16 @@ func WordOfTheDay() (*Definition, error) {
     }
 
     return Define(wotd)
+}
+
+// findChild searches html child nodes for the given type and matching data.
+func findChild(n *html.Node, t html.NodeType, f func(string)bool) *html.Node {
+    for c := n.FirstChild; c != nil; c = c.NextSibling {
+        if c.Type == t && f(c.Data) {
+            return c
+        }
+    }
+    return nil
 }
 
 // get performs the urban dictionary api call and json parsing.
@@ -138,6 +173,50 @@ func get(apiUrl string) (*DefinitionResponse, error) {
     }
 
     return &defs, nil
+}
+
+// searchTrendingList searches the html trending list for trending words.
+func searchTrendingList(n *html.Node) ([]string, error) {
+    var trending []string
+
+    for c := n.FirstChild; c != nil; c = c.NextSibling {
+        if c.Type == html.ElementNode && c.Data == "li" {
+            matchFunc := func(s string)bool{return s == "a"}
+            a := findChild(c, html.ElementNode, matchFunc)
+            if a == nil {
+                break
+            }
+
+            matchFunc = func(s string)bool{return true}
+            t := findChild(a, html.TextNode, matchFunc)
+            if t == nil {
+                break
+            }
+
+            trending = append(trending, t.Data)
+        }
+    }
+
+    return trending, nil
+}
+
+// searchForTrending searches the parsed html document for trending words.
+func searchForTrending(n *html.Node) ([]string, error) {
+    var trending []string
+    if n.Type == html.ElementNode && n.Data == "ul" {
+        for _, attr := range n.Attr {
+            if attr.Key == "class" && strings.Contains(attr.Val, "trending") {
+                return searchTrendingList(n)
+            }
+        }
+    }
+    for c := n.FirstChild; c != nil; c = c.NextSibling {
+        trending, err := searchForTrending(c)
+        if len(trending) > 0 || err != nil {
+            return trending, err
+        }
+    }
+    return trending, nil
 }
 
 // searchForWotd searches the parsed html document for the word of the day.
