@@ -13,6 +13,7 @@ go get github.com/davidscholberg/go-urbandict
 ### Library overview
 
 ```
+func Trending() ([]string, error)
 func Define(term string) (*Definition, error)
 func Random() (*Definition, error)
 func WordOfTheDay() (*Definition, error)
@@ -22,7 +23,7 @@ type Definition struct { ... }
 type DefinitionResponse struct { ... }
 ```
 
-**NOTE**: The WordOfTheDay function scrapes Urban Dictionary's front page for the word of the day since this feature does not appear to be exposed in their REST API.
+**NOTE**: The Trending and WordOfTheDay functions scrape Urban Dictionary's website since these features do not appear to be exposed in their REST API.
 
 ### Usage
 
@@ -62,6 +63,14 @@ func main () {
         return
     }
     fmt.Printf("JSON representation of random definition:\n%s\n\n", def)
+
+    // get trending words
+    trending, err := urbandict.Trending()
+    if err != nil {
+        fmt.Fprintln(os.Stderr, err)
+        return
+    }
+    fmt.Printf("Trending words: %v\n\n", trending)
 
     // get raw response object for a search query
     defRaw, err := urbandict.DefineRaw("w00t")
