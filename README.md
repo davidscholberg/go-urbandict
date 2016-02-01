@@ -27,7 +27,7 @@ type DefinitionResponse struct { ... }
 
 ### Usage
 
-```golang
+```go
 package main
 
 import (
